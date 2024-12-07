@@ -1,0 +1,40 @@
+name: Daily Worldcoin Digest
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # 每天 UTC 10:00 运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  generate-digest:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run daily digest
+      env:
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: python main.py
+    
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add summaries/
+        git commit -m "Update daily digest" || exit 0
+        git push
